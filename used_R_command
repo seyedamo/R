@@ -16,5 +16,7 @@ plot(1:20, 1:20, pch=1:20)
 rbind() cbind()
 edr <- read.csv("C:/adf/asdf/asdf.csv",header = TRUE)
 colnames(edr) <- c("NO","ID","PRICE")
+lapply(mylist, write, "test2.txt", append=TRUE)
+split(x,y)
 
 

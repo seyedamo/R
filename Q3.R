@@ -63,8 +63,7 @@ my_loess <- function(degree, alpha, samp) {
     y_hat <- sapply(samp$x, FUN = linear)
 
     x_sort <- sort(samp$x, index.return = TRUE)
-    plot(samp$x, samp$y)
-    lines(x_sort$x, y_hat[x_sort$ix], col = 'red')
+    qplot(samp$x, samp$y) + geom_line(aes(x = x_sort$x, y = y_hat[x_sort$ix], colour = 'red', size = 1.5, alpha = 0.5))
 }
 
 my_loess(2,1/3,samp)
@@ -77,7 +76,9 @@ lines(ksmooth(x, y, "normal", bandwidth = 3), col = 3)
 ?geom_smooth
 
 my_NW <- function(h, samp) {
-    y_hat <- sapply(samp$x, FUN = function(x0) {
+    x <- samp$x
+    y <- samp$y
+    y_hat <- sapply(x, FUN = function(x0) {
         w <- (exp(-0.5 * ((x - x0)/h)^2)/sqrt(2*pi)) / h
         y0 <- (t(w) %*% y) / sum(w)
         return(y0)
@@ -95,7 +96,7 @@ my_NW <- function(h, samp) {
 df <- my_NW(1, samp)
 df1 <- my_NW(0.5, samp)
 
-qplot(samp$x, samp$y) + geom_line(data = df, aes(x = x, y = y_hat), color = "red") + geom_line(data = df1, aes(x = x, y = y_hat), color = "blue")
+qplot(samp$x, samp$y) + geom_line(data = df, aes(x = x, y = y_hat), color = "red", size = 1.5, alpha = 0.5) + geom_line(data = df1, aes(x = x, y = y_hat), color = "blue", size = 1.5, alpha = 0.5)
 
 ##K <- function(x0) {
 ##    return(exp(-0.5 * ((x - x0)/h)^2)/sqrt(2*pi))
@@ -103,5 +104,28 @@ qplot(samp$x, samp$y) + geom_line(data = df, aes(x = x, y = y_hat), color = "red
 
 ## Q4
 
-my_k_nearest <- function(h, samp) {
+my_local_linear <- function(h, samp) {
+    x <- samp$x
+    y <- samp$y
+    n <- length(x)
+    y_hat <- sapply(x, FUN = function(x0) {
+        w <- (exp(-0.5 * ((x - x0)/h)^2)/sqrt(2*pi)) / h
+        xc <- x - x0
+        s0 <- sum(w) / n
+        s1 <- sum(xc * w) / n
+        s2 <- sum(xc^2 * w) / n
+        y0 <- sum(((s2 - s1*xc)*w*y)/(s2 * s0 - s1^2)) / n
+        return(y0)
+    })
 
+    ## x_sort <- sort(samp$x, index.return = TRUE)
+    ## plot(samp$x, samp$y)
+    ## lines(x_sort$x, y_hat[x_sort$ix], col = 'red')
+
+    df <- data.frame(samp$x, y_hat)
+    names(df) <- c("x","y_hat")
+    return(df)
+}
+
+df <- my_local_linear(1, samp)
+qplot(samp$x, samp$y) + geom_line(data = df, aes(x = x, y = y_hat), color = "red", size = 1.5, alpha = 0.5)

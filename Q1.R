@@ -19,6 +19,9 @@ samp_150 <- rg(0.8, 150)
 
 set.seed(10)
 samp_300 <- rg(0.8, 300)
+
+
+
 ##hist(samp)
 
 ## Nine methods taught in lecture
@@ -93,7 +96,7 @@ AkaikeCriterion <- function(X) {
     return(nbins)
 }
 
-## slide is different from code provided
+## slide is different from code provided missing factorial
 RisanneHallHannan <- function(X) {
     n <- length(X)
     BR <- rep(0,n)
@@ -104,16 +107,20 @@ RisanneHallHannan <- function(X) {
         nn <- h$counts
         prod_list <- c(1)
         for(j in c(1:i)) {
-            prod_list <- append(prod_list, factorial(nn[j]))
+            prod_list <- append(prod_list, lfactorial(nn[j]))
         }
-        BR[i] <- i^n * ((i - 1)/(i + n - 1)) * prod(prod_list)
-##      BR[i] <- i^n * ((i - 1)/(i + n - 1)) * prod(prod_list)
+		b = i;
+		for(j in seq(from = i + 1, to = i + n - 1, by = 1)) {
+			b = b * j
+		}
+		BR[i] <- (i^n * prod(prod_list))/b
     }
     nbins <- which.max(BR)
     maxval4BR <- max(BR)
     return(nbins)
 }
 
+## maximizing this formula
 HallHannan <- function(X) {
     n <- length(X)
     BR <- rep(0,n)
@@ -125,8 +132,8 @@ HallHannan <- function(X) {
         nn <- nn[nn > 0]
         BR[i] <-t(nn - 0.5) %*% log(nn - 0.5) - (n - i/2) * log(n - i/2) + n * log(i) - (i/2) * log(n)
     }
-    nbins <- which.min(BR)
-    maxval4BR <- min(BR)
+    nbins <- which.max(BR)
+    maxval4BR <- max(BR)
     return(nbins)
 }
 
@@ -153,6 +160,13 @@ Scott <- function(X) {
     n <- length(X)
     nbins <- floor((r[2] - r[1])*(n^(1/3)/(s * 3.49)))
     return(nbins)
+}
+
+true_pdf <- function(samp) {
+	x <- seq(from=min(samp), to=max(samp), length.out=300)
+	alpha = 0.8
+	d <- alpha * dexp(x, 0.5) + (1 - alpha) * dbeta(x, 5, 2)
+	lines(x, d, col = 'red')
 }
 
 list_of_methods <- list(BirgeRosenholz, Rudemo, KullbackCV, AkaikeCriterion, RisanneHallHannan, HallHannan, TaylorKazanawa, DevroyeGyorfi, Scott)
@@ -183,19 +197,20 @@ comp_methods <- function(l,ln, X) {
 
     result_list <- Map(function(method, title) {
         nbins <- method(X);
-        hist(X, breaks = seq(X_min, X_max, by = (X_max - X_min)/nbins), main = title, xlab = paste("number of bins",nbins))
+        hist(X, breaks = seq(X_min, X_max, by = (X_max - X_min)/nbins), 
+			main = title, xlab = paste("number of bins",nbins), freq = FALSE, ylim =range(c(0,1)))
+		true_pdf(X)
         return(nbins)
     }, l, ln)
 
     return(result_list)
 }
 
+
 result_list <- comp_methods(list_of_methods, list_of_methods_nm, samp_50)
 
 dev.new()
-
 result_list <- comp_methods(list_of_methods, list_of_methods_nm, samp_150)
 
 dev.new()
-
 result_list <- comp_methods(list_of_methods, list_of_methods_nm, samp_300)
